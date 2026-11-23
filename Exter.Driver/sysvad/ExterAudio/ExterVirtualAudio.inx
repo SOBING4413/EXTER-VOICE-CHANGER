@@ -1,0 +1,147 @@
+; ExterVirtualAudio.inx - Exter Virtual Audio Device (EXTER VIRTUAL MICROPHONE)
+; Berbasis Microsoft SysVAD (MIT). Hanya satu endpoint capture; tidak ada endpoint render.
+; Dibuat menjadi ExterVirtualAudio.inf oleh stampinf (Visual Studio + WDK).
+
+[Version]
+Signature   = "$Windows NT$"
+Class       = MEDIA
+ClassGUID   = {4d36e96c-e325-11ce-bfc1-08002be10318}
+Provider    = %ProviderName%
+DriverVer   = 11/22/2026, 1.0.0.0
+CatalogFile = ExterVirtualAudio.cat
+PnpLockDown = 1
+
+[SourceDisksNames]
+222 = "Exter Virtual Audio Driver Disk","",222
+
+[SourceDisksFiles]
+ExterVirtualAudio.sys = 222
+
+[Manufacturer]
+%MfgName% = EXTER,NT$ARCH$.10.0...16299
+
+; Hardware ID (root-enumerated): Root\ExterVirtualAudio  -> dipakai Install-ExterVirtualMic.ps1
+[EXTER.NT$ARCH$.10.0...16299]
+%EXTER.DeviceDesc% = EXTER_VMIC, Root\ExterVirtualAudio
+
+[DestinationDirs]
+EXTER_VMIC.CopyList = 13 ; 13 = DriverStore
+
+;======================================================
+; EXTER_VMIC
+;======================================================
+[EXTER_VMIC.CopyList]
+ExterVirtualAudio.sys
+
+[EXTER_VMIC.NT]
+Include  = ks.inf,wdmaudio.inf
+Needs    = KS.Registration, WDMAUDIO.Registration
+CopyFiles= EXTER_VMIC.CopyList
+AddReg   = EXTER_VMIC.AddReg
+
+[EXTER_VMIC.AddReg]
+HKR,,AssociatedFilters,,"wdmaud,swmidi,redbook"
+HKR,,Driver,,ExterVirtualAudio.sys
+
+HKR,Drivers,SubClasses,,"wave,midi,mixer"
+
+HKR,Drivers\wave\wdmaud.drv,Driver,,wdmaud.drv
+HKR,Drivers\midi\wdmaud.drv,Driver,,wdmaud.drv
+HKR,Drivers\mixer\wdmaud.drv,Driver,,wdmaud.drv
+
+HKR,Drivers\wave\wdmaud.drv,Description,,%EXTER.DeviceDesc%
+HKR,Drivers\midi\wdmaud.drv,Description,,%EXTER.DeviceDesc%
+HKR,Drivers\mixer\wdmaud.drv,Description,,%EXTER.DeviceDesc%
+
+; Nama yang tampil di Windows / Discord: "EXTER VIRTUAL MICROPHONE (Exter Virtual Audio Device)".
+; GUID ini = MICIN_CUSTOM_NAME di micintoptable.h; Exter.AudioEngine & VirtualAudioManager mencari teks
+; "EXTER VIRTUAL MICROPHONE" pada nama endpoint (jangan diubah tanpa mengubah keduanya).
+HKR,%MEDIA_CATEGORIES%\%MicInCustomNameGUID%,Name,,%MicInCustomName%
+
+;======================================================
+; capture interfaces: EXTER VIRTUAL MICROPHONE
+;======================================================
+[EXTER.I.WaveMicIn]
+AddReg = EXTER.I.WaveMicIn.AddReg
+[EXTER.I.WaveMicIn.AddReg]
+HKR,,CLSID,,%Proxy.CLSID%
+HKR,,FriendlyName,,%EXTER.WaveMicIn.szPname%
+
+[EXTER.I.TopologyMicIn]
+AddReg = EXTER.I.TopologyMicIn.AddReg
+[EXTER.I.TopologyMicIn.AddReg]
+HKR,,CLSID,,%Proxy.CLSID%
+HKR,,FriendlyName,,%EXTER.TopologyMicIn.szPname%
+HKR,EP\0,%PKEY_AudioEndpoint_Association%,,%KSNODETYPE_ANY%
+; The following lines opt-in to pull mode.
+HKR,EP\0,%PKEY_AudioEndpoint_Supports_EventDriven_Mode%,0x00010001,0x1
+
+[EXTER_VMIC.NT.Interfaces]
+; Nama interface (KSNAME_*) HARUS sama dengan nama di minipairs.h: L"WaveMicIn" / L"TopologyMicIn".
+AddInterface = %KSCATEGORY_AUDIO%,    %KSNAME_WaveMicIn%,     EXTER.I.WaveMicIn
+AddInterface = %KSCATEGORY_REALTIME%, %KSNAME_WaveMicIn%,     EXTER.I.WaveMicIn
+AddInterface = %KSCATEGORY_CAPTURE%,  %KSNAME_WaveMicIn%,     EXTER.I.WaveMicIn
+AddInterface = %KSCATEGORY_AUDIO%,    %KSNAME_TopologyMicIn%, EXTER.I.TopologyMicIn
+AddInterface = %KSCATEGORY_TOPOLOGY%, %KSNAME_TopologyMicIn%, EXTER.I.TopologyMicIn
+
+[EXTER_VMIC.NT.Services]
+AddService = ExterVirtualAudio,0x00000002,EXTER_VMIC_Service_Inst
+
+[EXTER_VMIC_Service_Inst]
+DisplayName   = %EXTER.SvcDesc%
+ServiceType   = 1
+StartType     = 3
+ErrorControl  = 1
+ServiceBinary = %13%\ExterVirtualAudio.sys
+
+[EXTER_VMIC.NT.HW]
+AddReg = AUDIOHW.AddReg
+
+[AUDIOHW.AddReg]
+; FILE_DEVICE_SOUND
+HKR,,DeviceType,0x10001,0x0000001D
+; SDDL_DEVOBJ_SYS_ALL_ADM_RWX_WORLD_RWX_RES_RWX
+HKR,,Security,,"D:P(A;;GA;;;SY)(A;;GRGWGX;;;BA)(A;;GRGWGX;;;WD)(A;;GRGWGX;;;RC)"
+
+;======================================================
+; WDF
+;======================================================
+[EXTER_VMIC.NT.Wdf]
+KmdfService = ExterVirtualAudio, EXTER_VMIC_WdfSect
+
+[EXTER_VMIC_WdfSect]
+KmdfLibraryVersion = $KMDFVERSION$
+
+;======================================================
+; Strings
+;======================================================
+[Strings]
+; Non-localizable
+KSNAME_WaveMicIn     = "WaveMicIn"
+KSNAME_TopologyMicIn = "TopologyMicIn"
+
+Proxy.CLSID          = "{17CCA71B-ECD7-11D0-B908-00A0C9223196}"
+KSCATEGORY_AUDIO     = "{6994AD04-93EF-11D0-A3CC-00A0C9223196}"
+KSCATEGORY_CAPTURE   = "{65E8773D-8F56-11D0-A3B9-00A0C9223196}"
+KSCATEGORY_REALTIME  = "{EB115FFC-10C8-4964-831D-6DCB02E6F23F}"
+KSCATEGORY_TOPOLOGY  = "{DDA54A40-1E4C-11D1-A050-405705C10000}"
+
+KSNODETYPE_ANY       = "{00000000-0000-0000-0000-000000000000}"
+
+PKEY_AudioEndpoint_Association               = "{1DA5D803-D492-4EDD-8C23-E0C0FFEE7F0E},2"
+PKEY_AudioEndpoint_Supports_EventDriven_Mode = "{1DA5D803-D492-4EDD-8C23-E0C0FFEE7F0E},7"
+
+MEDIA_CATEGORIES     = "MediaCategories"
+MicInCustomNameGUID  = {d48deb08-fd1c-4d1e-b821-9064d49ae96e}
+
+; Localizable
+ProviderName = "Exter Interactive"
+MfgName      = "Exter Interactive"
+
+EXTER.DeviceDesc = "Exter Virtual Audio Device"
+EXTER.SvcDesc    = "Exter Virtual Audio Device Driver"
+
+EXTER.WaveMicIn.szPname     = "EXTER VIRTUAL MICROPHONE Wave"
+EXTER.TopologyMicIn.szPname = "EXTER VIRTUAL MICROPHONE Topology"
+
+MicInCustomName = "EXTER VIRTUAL MICROPHONE"

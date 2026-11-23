@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Konfigurasi default Exter Voice Changer. Salinan pengguna disimpan di %AppData%\Exter\settings.xml -->
+<ExterSettings>
+  <PowerOn>true</PowerOn>
+  <Mode>PushToTalk</Mode>
+  <PttKey>86</PttKey>
+  <OffBehavior>Bypass</OffBehavior>
+  <InputDeviceId></InputDeviceId>
+  <OutputDeviceId></OutputDeviceId>
+  <SampleRate>48000</SampleRate>
+  <BufferMs>40</BufferMs>
+  <InputVolume>100</InputVolume>
+  <OutputVolume>100</OutputVolume>
+  <GateEnabled>true</GateEnabled>
+  <GateThresholdDb>-45</GateThresholdDb>
+  <HighPassHz>300</HighPassHz>
+  <LowPassHz>3400</LowPassHz>
+  <CompThresholdDb>-22</CompThresholdDb>
+  <CompRatio>4</CompRatio>
+  <Drive>1.8</Drive>
+  <StaticLevel>0.25</StaticLevel>
+  <BeepEnabled>true</BeepEnabled>
+</ExterSettings>
